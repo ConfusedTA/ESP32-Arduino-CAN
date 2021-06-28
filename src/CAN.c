@@ -50,6 +50,7 @@ static void CAN_read_frame_phy();
 static void CAN_isr(void *arg_p);
 static int CAN_write_frame_phy(const CAN_frame_t *p_frame);
 static SemaphoreHandle_t sem_tx_complete;
+static uint64_t tx_timeout = portMAX_DELAY;
 
 static void CAN_isr(void *arg_p) {
 
@@ -184,6 +185,11 @@ int CAN_init() {
 	gpio_matrix_in(CAN_cfg.rx_pin_id, CAN_RX_IDX, 0);
 	gpio_pad_select_gpio(CAN_cfg.rx_pin_id);
 
+	// set tx timeout
+	if (CAN_cfg.tx_timeout > 0) {
+	  tx_timeout = CAN_cfg.tx_timeout;
+	}
+
 	// set to PELICAN mode
 	MODULE_CAN->CDR.B.CAN_M = 0x1;
 
@@ -255,7 +261,7 @@ int CAN_init() {
 
 	// allocate the tx complete semaphore
 	sem_tx_complete = xSemaphoreCreateBinary();
-
+	
 	// Showtime. Release Reset Mode.
 	MODULE_CAN->MOD.B.RM = 0;
 
@@ -271,9 +277,11 @@ int CAN_write_frame(const CAN_frame_t *p_frame) {
 	CAN_write_frame_phy(p_frame);
 
 	// wait for the frame tx to complete
-	xSemaphoreTake(sem_tx_complete, portMAX_DELAY);
+	if (xSemaphoreTake(sem_tx_complete, tx_timeout) == pdTRUE) {
+	  return 0;
+	}
 
-	return 0;
+    return -1;
 }
 
 int CAN_stop() {

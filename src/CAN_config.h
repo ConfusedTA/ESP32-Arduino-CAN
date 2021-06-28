@@ -59,6 +59,7 @@ typedef struct {
 	QueueHandle_t tx_queue; /**< \brief Handler to FreeRTOS TX queue. */
 	TaskHandle_t tx_handle; /**< \brief Handler to FreeRTOS TX task. */
 	TaskHandle_t rx_handle; /**< \brief Handler to FreeRTOS RX task. */
+	uint64_t tx_timeout;    /**< \brief Transmit timeout. */
 } CAN_device_t;
 
 /** \brief CAN configuration reference */
