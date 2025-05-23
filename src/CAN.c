@@ -36,15 +36,13 @@
 
 #include "esp_intr_alloc.h"
 #include "soc/dport_reg.h"
+#include "soc/gpio_sig_map.h"
 #include <math.h>
 
 #include "driver/gpio.h"
 
 #include "can_regdef.h"
 #include "CAN_config.h"
-
-#define TWAI_TX_IDX 123
-#define TWAI_RX_IDX 94
 
 // CAN Filter - no acceptance filter
 static CAN_filter_t __filter = { Dual_Mode, 0, 0, 0, 0, 0Xff, 0Xff, 0Xff, 0Xff };
@@ -207,7 +205,8 @@ int CAN_init() {
 	switch (CAN_cfg.speed) {
 	case CAN_SPEED_1000KBPS:
 		MODULE_CAN->BTR1.B.TSEG1 = 0x4;
-		__tq = 0.125;
+		MODULE_CAN->BTR1.B.TSEG2 = 0x3;
+		__tq = 0.0625;
 		break;
 
 	case CAN_SPEED_800KBPS:
@@ -226,7 +225,7 @@ int CAN_init() {
 		__tq = ((float) 1000 / CAN_cfg.speed) / 16;
 	}
 
-	// set baud rate prescaler
+	// set baud rate 
 	MODULE_CAN->BTR0.B.BRP = (uint8_t) round((((APB_CLK_FREQ * __tq) / 2) - 1) / 1000000) - 1;
 
 	/* Set sampling
